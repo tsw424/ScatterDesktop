@@ -121,6 +121,21 @@ export default class TRX extends Plugin {
         })
     }
 
+
+	getTransactionHashFromResult(result){ return result.txID; }
+	hasUpdatableContracts(){ return false; }
+	baseConfirmationTime(){ return 2000; }
+	async hasTransactionCompleted(network, hash){
+		// console.log('getting transaction: ', hash);
+		// const eos = getCachedInstance(network);
+		// return Promise.race([
+		// 	new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+		// 	eos.getTransaction(hash).catch(() => false).then(res => {
+		// 		return res.trx.receipt.status === 'status' && res.block_num > res.last_irreversible_block
+		// 	})
+		// ])
+	}
+
     async signer(payload, publicKey, arbitrary = false, isHash = false){
         let privateKey = KeyPairService.publicToPrivate(publicKey);
         if (!privateKey) return;

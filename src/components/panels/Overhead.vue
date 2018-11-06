@@ -102,6 +102,10 @@
 
     let saveTimeout = null;
 
+    import RecurringPaymentsService from '../../services/RecurringPaymentsService';
+    import RecurringPayment from '../../models/RecurringPayment';
+    import Token from '../../models/Token';
+
     export default {
         data () {return {
             refreshing:false,
@@ -134,7 +138,16 @@
         },
         created(){
             this.init();
-            UpdateService.needsUpdate()
+            UpdateService.needsUpdate();
+
+            RecurringPaymentsService.removeAll().then(async () => {
+	            const token = new Token();
+	            const network = this.scatter.settings.networks.find(x => x.blockchain === Blockchains.EOSIO);
+	            const account = this.scatter.keychain.accounts.filter(x => x.blockchain() === Blockchains.EOSIO)[1];
+	            const payment = new RecurringPayment(token, 'safetransfer', '1.0000', account.unique(), network.unique(), 5, 2, {memo:'ramdeathtest'});
+	            RecurringPaymentsService.addPayment(payment);
+	            RecurringPaymentsService.watchPayments();
+            })
         },
         methods:{
             async init(){

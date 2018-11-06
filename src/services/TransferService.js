@@ -32,6 +32,8 @@ export default class TransferService {
 
     static async baseTransfer(params, parseDecimals = true){
         let {account, recipient, amount, memo, token } = params;
+        const promptForSignature = params.hasOwnProperty('prompt') ? params.prompt : true;
+        const returnOnly = params.hasOwnProperty('returnOnly');
         const plugin = PluginRepository.plugin(account.blockchain());
 
 
@@ -47,27 +49,22 @@ export default class TransferService {
                 amount,
                 contract:token.account,
                 symbol:token.symbol,
-                memo
+                memo,
+	            promptForSignature
             }).catch(x => x);
 
         if(transfer !== null) {
             if (transfer.hasOwnProperty('error')) {
-                PopupService.push(Popup.prompt("Transfer Error", transfer.error, "ban", "Okay"));
+	            if(returnOnly) return false;
+
+	            PopupService.push(Popup.prompt("Transfer Error", transfer.error, "ban", "Okay"));
                 return false;
             }
             else {
-                switch(token.blockchain){
-                    case Blockchains.EOSIO:
-                        PopupService.push(Popup.transactionSuccess(token.blockchain, transfer.transaction_id))
-                        break;
-                    case Blockchains.TRX:
-                        PopupService.push(Popup.transactionSuccess(token.blockchain, transfer.txID))
-                        break;
-                    case Blockchains.ETH:
-                        PopupService.push(Popup.transactionSuccess(token.blockchain, transfer.transactionHash))
-                        break;
-                }
+                const txid = plugin.getTransactionHashFromResult(transfer);
+	            if(returnOnly) return transfer.transaction_id;
 
+	            PopupService.push(Popup.transactionSuccess(token.blockchain, txid));
                 return true;
             }
         }

@@ -4,6 +4,7 @@ import {Blockchains} from '../../models/Blockchains'
 import Network from '../../models/Network'
 import Account from '../../models/Account'
 import KeyPairService from '../../services/KeyPairService'
+import Hasher from '../../util/Hasher';
 import Eos from 'eosjs'
 let {ecc, Fcbuffer} = Eos.modules;
 import ObjectHelpers from '../../util/ObjectHelpers'
@@ -281,8 +282,6 @@ export default class EOS extends Plugin {
         ])
     }
 
-
-
     async passThroughProvider(payload, account, rejector){
         return new Promise(async resolve => {
             payload.messages = await this.requestParser(payload, Network.fromJson(account.network()));
@@ -366,6 +365,40 @@ export default class EOS extends Plugin {
                 .then(result => result));
         })
     }
+
+
+
+
+	getTransactionHashFromResult(result){
+		return result.transaction_id;
+	}
+
+	getContractHash(network, contract){
+		return Promise.race([
+			new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+			fetch(`${network.fullhost()}/v1/chain/get_raw_code_and_abi`, {
+				method: "POST",
+				cache: "no-cache",
+				headers: { "Content-Type": "application/json; charset=utf-8" },
+				body: JSON.stringify({account_name:contract}),
+			}).then(res => res.json())
+				.then(res => Hasher.unsaltedQuickHash(`${res.abi}${res.wasm}`))
+				.catch(() => null)
+		])
+	}
+
+	hasUpdatableContracts(){ return true; }
+	baseConfirmationTime(){ return 600; }
+	async hasTransactionCompleted(network, hash){
+		console.log('getting transaction: ', hash);
+		const eos = getCachedInstance(network);
+		return Promise.race([
+			new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+			eos.getTransaction(hash).catch(() => false).then(res => {
+				return res.trx.receipt.status === 'status' && res.block_num > res.last_irreversible_block
+			})
+		])
+	}
 
     async signer(payload, publicKey, arbitrary = false, isHash = false){
         let privateKey = KeyPairService.publicToPrivate(publicKey);

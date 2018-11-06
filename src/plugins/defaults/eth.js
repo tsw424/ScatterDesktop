@@ -174,6 +174,22 @@ export default class ETH extends Plugin {
         })
     }
 
+	getTransactionHashFromResult(result){ return result.transactionHash; }
+	hasUpdatableContracts(){ return false; }
+	baseConfirmationTime(){ return 30000; }
+	async hasTransactionCompleted(network, hash){
+        //eth.getTransactionReceipt(transactionHash)
+
+		// console.log('getting transaction: ', hash);
+		// const eos = getCachedInstance(network);
+		// return Promise.race([
+		// 	new Promise(resolve => setTimeout(() => resolve(null), 2000)),
+		// 	eos.getTransaction(hash).catch(() => false).then(res => {
+		// 		return res.trx.receipt.status === 'status' && res.block_num > res.last_irreversible_block
+		// 	})
+		// ])
+	}
+
     async signer(transaction, publicKey, arbitrary = false, isHash = false){
         const basePrivateKey = KeyPairService.publicToPrivate(publicKey);
         if(!basePrivateKey) return;

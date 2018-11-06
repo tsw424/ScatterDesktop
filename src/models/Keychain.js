@@ -3,17 +3,17 @@ import Permission from './Permission';
 import Keypair from './Keypair';
 import Account from './Account';
 import AuthorizedApp from './AuthorizedApp';
-import ObjectHelpers from '../util/ObjectHelpers';
+import RecurringPayment from './RecurringPayment';
 
 export default class Keychain {
 
     constructor(){
         this.keypairs = [];
         this.accounts = [];
-        this.linkedApps = [];
         this.identities = [];
         this.permissions = [];
         this.apps = [];
+        this.recurringPayments = [];
     }
 
     static placeholder(){ return new Keychain(); }
@@ -24,6 +24,7 @@ export default class Keychain {
         if(json.hasOwnProperty('identities')) p.identities = json.identities.map(x => Identity.fromJson(x));
         if(json.hasOwnProperty('permissions')) p.permissions = json.permissions.map(x => Permission.fromJson(x));
         if(json.hasOwnProperty('apps')) p.apps = json.apps.map(x => AuthorizedApp.fromJson(x));
+        if(json.hasOwnProperty('recurringPayments')) p.recurringPayments = json.recurringPayments.map(x => RecurringPayment.fromJson(x));
         return p;
     }
 
@@ -58,14 +59,6 @@ export default class Keychain {
         this.permissions = this.permissions.filter(perm => perm.identity !== identity.publicKey);
     }
 
-    getKeyPairByName(name){
-        return this.keypairs.find(key => key.name.toLowerCase() === name.toLowerCase())
-    }
-
-    getKeyPairByPublicKey(publicKey){
-        return this.keypairs.find(key => key.publicKeys.find(x => x.key.toLowerCase() === publicKey.toLowerCase()))
-    }
-
     removeKeyPair(keypair){
         const accountsToRemove = this.accounts.filter(x => x.keypairUnique === keypair.unique()).map(x => x.unique());
         this.permissions = this.permissions.filter(x => !x.accounts.some(a => accountsToRemove.includes(a)));
@@ -83,4 +76,13 @@ export default class Keychain {
         this.permissions = this.permissions.filter(x => !x.accounts.some(a => accountsToRemove.includes(a)));
         this.accounts = this.accounts.filter(a => a.unique() !== account.unique());
     }
+
+    removeRecurringPayment(payment){
+	    this.recurringPayments = this.recurringPayments.filter(x => x.id !== payment.id);
+    }
+
+	updateOrPushRecurringPayment(payment){
+        this.removeRecurringPayment(payment);
+		this.recurringPayments.push(payment);
+	}
 }

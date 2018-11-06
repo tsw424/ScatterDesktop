@@ -328,6 +328,8 @@ export default class ApiService {
 
         return new Promise(async resolve => {
 
+	        console.log('req', request);
+
             const {payload} = request;
             const {origin, requiredFields, blockchain} = payload;
 
